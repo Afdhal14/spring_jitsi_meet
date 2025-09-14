@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Jitsi Meeting</title>
+    <script src="https://8x8.vc/external_api.js"></script>
+</head>
+<body>
+<h2>Join Meeting</h2>
+
+<label>
+    Name:
+    <input type="text" id="userName" placeholder="Enter your name">
+</label>
+<br><br>
+
+<label>
+    Email:
+    <input type="email" id="email" placeholder="Enter your email">
+</label>
+<br><br>
+
+<label>
+    Role:
+    <select id="role">
+        <option value="teacher">Teacher</option>
+        <option value="student">Student</option>
+    </select>
+</label>
+<br><br>
+
+<label>
+    Room Name:
+    <input type="text" id="roomName" placeholder="MyRoom123">
+</label>
+<br><br>
+
+<button onclick="startMeeting()">Join Meeting</button>
+
+<div id="meet" style="margin-top:20px; width:100%; height:600px;"></div>
+
+<script>
+    async function startMeeting() {
+      const userName = document.getElementById("userName").value;
+      const email = document.getElementById("email").value;
+      const role = document.getElementById("role").value;
+      const roomName = document.getElementById("roomName").value || "DefaultRoom";
+
+      const moderator = (role === "teacher");
+
+      try {
+        let res = await fetch(`http://localhost:8080/api/jitsi/generateToken?userName=${encodeURIComponent(userName)}&email=${encodeURIComponent(email)}&moderator=${moderator}&roomName=${encodeURIComponent(roomName)}`);
+        let data = await res.json();
+
+        if (data.error) {
+          alert(data.error); // e.g., "Teacher has not joined yet."
+          return;
+        }
+
+        const domain = "8x8.vc";
+        const options = {
+          roomName: "vpaas-magic-cookie-21914f93867740e6981404d3e5f0cc39/" + roomName,
+          parentNode: document.getElementById("meet"),
+          jwt: data.token,
+          width: "100%",
+          height: 600
+        };
+
+        const api = new JitsiMeetExternalAPI(domain, options);
+
+        api.addListener("videoConferenceJoined", () => {
+          console.log(`${userName} joined the meeting`);
+        });
+
+      } catch (err) {
+        console.error("Error joining meeting:", err);
+        alert("Unable to join meeting. Check console.");
+      }
+    }
+</script>
+</body>
+</html>
