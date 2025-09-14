@@ -4,6 +4,7 @@ import com.jitsi.meet.model.Meeting;
 import com.jitsi.meet.repository.MeetingRepository;
 import com.jitsi.meet.util.JaaSJwtBuilder;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.security.interfaces.RSAPrivateKey;
@@ -36,11 +37,14 @@ public class JitsiService {
                 meeting.setCreatedBy(email);
             }
             meeting.setTeacherJoined(true);
+            meeting.setTeacherCount(meeting.getTeacherCount() + 1);
             meetingRepository.save(meeting);
         } else {
             if (meeting == null || !meeting.isTeacherJoined()) {
                 throw new RuntimeException("Teacher has not joined yet.");
             }
+            meeting.setStudentCount(meeting.getStudentCount() + 1);
+            meetingRepository.save(meeting);
         }
 
         return new JaaSJwtBuilder()
@@ -49,5 +53,9 @@ public class JitsiService {
                 .withAppID(appId)
                 .withUser(userName, email, moderator)
                 .signWith(privateKey);
+    }
+
+    public ResponseEntity<?> getMeetings() {
+        return ResponseEntity.ok(meetingRepository.findAll());
     }
 }

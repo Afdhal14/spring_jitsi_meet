@@ -19,6 +19,11 @@ public class JitsiController {
         this.jitsiService = jitsiService;
     }
 
+    @GetMapping("/meetings")
+    public ResponseEntity<?> getMeetings() {
+        return jitsiService.getMeetings();
+    }
+
     @GetMapping("/generateToken")
     public ResponseEntity<?> generateToken(
             @RequestParam String userName,

@@ -5,7 +5,7 @@
     <script src="https://8x8.vc/external_api.js"></script>
 </head>
 <body>
-<h2>Join Meeting</h2>
+<h2>Create Meeting</h2>
 
 <label>
     Name:
@@ -34,12 +34,15 @@
 </label>
 <br><br>
 
-<button onclick="startMeeting()">Join Meeting</button>
+<button onclick="createMeeting()">Create Meeting</button>
+
+<h2>Available Meetings</h2>
+<div id="meeting-list"></div>
 
 <div id="meet" style="margin-top:20px; width:100%; height:600px;"></div>
 
 <script>
-    async function startMeeting() {
+    async function createMeeting() {
       const userName = document.getElementById("userName").value;
       const email = document.getElementById("email").value;
       const role = document.getElementById("role").value;
@@ -52,7 +55,7 @@
         let data = await res.json();
 
         if (data.error) {
-          alert(data.error); // e.g., "Teacher has not joined yet."
+          alert(data.error);
           return;
         }
 
@@ -65,10 +68,78 @@
           height: 600
         };
 
+        document.getElementById("meet").innerHTML = ""; // reset
         const api = new JitsiMeetExternalAPI(domain, options);
 
         api.addListener("videoConferenceJoined", () => {
-          console.log(`${userName} joined the meeting`);
+          console.log(`${userName} created/joined the meeting`);
+        });
+
+        // reload available meetings after creation
+        loadMeetings();
+
+      } catch (err) {
+        console.error("Error creating meeting:", err);
+        alert("Unable to create meeting. Check console.");
+      }
+    }
+
+    async function loadMeetings() {
+      try {
+        let res = await fetch("http://localhost:8080/api/jitsi/meetings");
+        let meetings = await res.json();
+
+        let listDiv = document.getElementById("meeting-list");
+        listDiv.innerHTML = "";
+
+        if (!meetings || meetings.length === 0) {
+          listDiv.innerHTML = "<p>No meetings available</p>";
+          return;
+        }
+
+        meetings.forEach(meeting => {
+          let div = document.createElement("div");
+          div.style.marginBottom = "10px";
+          div.innerHTML = `
+            <strong>${meeting.roomName}</strong>
+            <button onclick="joinMeeting('${meeting.roomName}')">Join</button>
+          `;
+          listDiv.appendChild(div);
+        });
+      } catch (err) {
+        console.error("Error loading meetings:", err);
+      }
+    }
+
+    async function joinMeeting(roomName) {
+      const userName = document.getElementById("userName").value || "Guest";
+      const email = document.getElementById("email").value || "guest@example.com";
+      const role = document.getElementById("role").value;
+      const moderator = (role === "teacher");
+
+      try {
+        let res = await fetch(`http://localhost:8080/api/jitsi/generateToken?userName=${encodeURIComponent(userName)}&email=${encodeURIComponent(email)}&moderator=${moderator}&roomName=${encodeURIComponent(roomName)}`);
+        let data = await res.json();
+
+        if (data.error) {
+          alert(data.error);
+          return;
+        }
+
+        const domain = "8x8.vc";
+        const options = {
+          roomName: "vpaas-magic-cookie-21914f93867740e6981404d3e5f0cc39/" + roomName,
+          parentNode: document.getElementById("meet"),
+          jwt: data.token,
+          width: "100%",
+          height: 600
+        };
+
+        document.getElementById("meet").innerHTML = ""; // reset
+        const api = new JitsiMeetExternalAPI(domain, options);
+
+        api.addListener("videoConferenceJoined", () => {
+          console.log(`${userName} joined meeting: ${roomName}`);
         });
 
       } catch (err) {
@@ -76,6 +147,9 @@
         alert("Unable to join meeting. Check console.");
       }
     }
+
+    // Load meetings when page starts
+    loadMeetings();
 </script>
 </body>
 </html>

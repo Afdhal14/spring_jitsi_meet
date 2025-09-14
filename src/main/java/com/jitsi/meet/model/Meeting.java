@@ -17,6 +17,8 @@ public class Meeting {
     private String roomName;
     private String createdBy;
     private boolean teacherJoined = false;
+    private int teacherCount = 0;
+    private int studentCount = 0;
     private LocalDateTime createdAt = LocalDateTime.now();
 
     public Meeting(Long id, String roomName, String createdBy, boolean teacherJoined, LocalDateTime createdAt) {
@@ -28,6 +30,22 @@ public class Meeting {
     }
 
     public Meeting() {
+    }
+
+    public int getTeacherCount() {
+        return teacherCount;
+    }
+
+    public void setTeacherCount(int teacherCount) {
+        this.teacherCount = teacherCount;
+    }
+
+    public int getStudentCount() {
+        return studentCount;
+    }
+
+    public void setStudentCount(int studentCount) {
+        this.studentCount = studentCount;
     }
 
     public Long getId() {
